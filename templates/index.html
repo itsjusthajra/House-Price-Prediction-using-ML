@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PropSeeker | House Price Prediction</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <span class="logo-icon">⬡</span> PropSeeker
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav ms-auto gap-1">
+        <li class="nav-item"><a class="nav-link active" href="/">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" href="/predict">Predict</a></li>
+        <li class="nav-item"><a class="nav-link" href="/insights">Model Insights</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-7">
+        <div class="hero-badge">🏠 AI-Powered Real Estate Analytics</div>
+        <h1>
+          Predict House Prices<br>
+          <span class="gradient-text">with Machine Learning</span>
+        </h1>
+        <p class="lead">
+          Professional-grade regression models trained on real housing data. 
+          Get instant, accurate price estimates for any property configuration.
+        </p>
+        <div class="d-flex gap-3 flex-wrap">
+          <a href="/predict" class="btn-primary-custom">
+            <span>→</span> Get Price Estimate
+          </a>
+          <a href="/dashboard" class="btn-outline-custom">View Analytics</a>
+        </div>
+      </div>
+      <div class="col-lg-5 mt-5 mt-lg-0">
+        <div class="card-glass">
+          <div class="d-flex align-center justify-between mb-3">
+            <span class="text-muted-c" style="font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;font-weight:600">Best Model</span>
+            <span class="badge-pill badge-primary">{{ metadata.best_model }}</span>
+          </div>
+          <div class="metric-row">
+            <div class="metric-box">
+              <div class="metric-val">{{ stats.r2_score }}</div>
+              <div class="metric-lbl">R² Score</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-val">{{ stats.mae }}</div>
+              <div class="metric-lbl">MAE</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-val">{{ stats.rmse }}</div>
+              <div class="metric-lbl">RMSE</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-val">{{ stats.features }}</div>
+              <div class="metric-lbl">Features</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats row -->
+<section style="padding: 0 0 3rem">
+  <div class="container">
+    <div class="row g-3">
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon">🏘️</div>
+          <div class="stat-value">{{ stats.total_houses }}</div>
+          <div class="stat-label">Total Properties</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon">💰</div>
+          <div class="stat-value">{{ stats.avg_price }}</div>
+          <div class="stat-label">Average Price</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon">📐</div>
+          <div class="stat-value">{{ stats.avg_area }}</div>
+          <div class="stat-label">Average Area</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon">🤖</div>
+          <div class="stat-value">4</div>
+          <div class="stat-label">Models Trained</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Feature cards -->
+<section style="padding: 2rem 0 4rem">
+  <div class="container">
+    <div class="section-header text-center mb-5">
+      <h2>What Makes PropSeeker Different</h2>
+      <p>Built with production-grade ML engineering practices</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="card-glass h-100">
+          <div style="font-size:2rem;margin-bottom:.75rem">⚡</div>
+          <h5 style="font-weight:700;margin-bottom:.5rem">Real-Time Predictions</h5>
+          <p class="text-muted-c" style="font-size:.9rem">Instant price estimates powered by ensemble ML models with feature contribution breakdown.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card-glass h-100">
+          <div style="font-size:2rem;margin-bottom:.75rem">📊</div>
+          <h5 style="font-weight:700;margin-bottom:.5rem">Interactive EDA</h5>
+          <p class="text-muted-c" style="font-size:.9rem">Explore price distributions, correlations, and market trends through dynamic Plotly charts.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card-glass h-100">
+          <div style="font-size:2rem;margin-bottom:.75rem">🏆</div>
+          <h5 style="font-weight:700;margin-bottom:.5rem">Auto Model Selection</h5>
+          <p class="text-muted-c" style="font-size:.9rem">Trains and compares Linear Regression, Random Forest, Gradient Boosting & XGBoost automatically.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Model summary table -->
+<section style="padding: 0 0 4rem">
+  <div class="container">
+    <div class="section-header mb-4">
+      <h2>Model Performance Summary</h2>
+      <p>All models evaluated on held-out test set (20% split)</p>
+    </div>
+    <div class="card-glass">
+      <div class="table-responsive">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>R² Score</th>
+              <th>MAE</th>
+              <th>RMSE</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for model_name, metrics in metadata.all_models.items() %}
+            <tr>
+              <td style="font-weight:600">{{ model_name }}</td>
+              <td>{{ "%.4f"|format(metrics.r2) }}</td>
+              <td>${{ "{:,.0f}".format(metrics.mae) }}</td>
+              <td>${{ "{:,.0f}".format(metrics.rmse) }}</td>
+              <td>
+                {% if model_name == metadata.best_model %}
+                  <span class="badge-pill badge-success">✓ Best</span>
+                {% else %}
+                  <span class="badge-pill badge-primary">Trained</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section style="padding: 3rem 0 5rem">
+  <div class="container text-center">
+    <div class="card-glass" style="max-width:600px;margin:0 auto;padding:3rem 2rem">
+      <h3 style="font-weight:800;margin-bottom:.75rem">Ready to estimate a property?</h3>
+      <p class="text-muted-c" style="margin-bottom:1.5rem">Enter house details and get an instant AI-powered price prediction.</p>
+      <a href="/predict" class="btn-primary-custom" style="font-size:1rem">
+        🏠 Start Predicting
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>PropSeeker &mdash; House Price Prediction &bull; Built with Flask, Scikit-learn & Plotly</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
