@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Model Insights | PropSeeker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <span class="logo-icon">⬡</span> PropSeeker
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav ms-auto gap-1">
+        <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" href="/predict">Predict</a></li>
+        <li class="nav-item"><a class="nav-link active" href="/insights">Model Insights</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container" style="padding: 2.5rem 0 5rem">
+
+  <div class="section-header mb-5">
+    <h2>Model Insights</h2>
+    <p>Deep dive into model performance, feature importance, and error analysis</p>
+  </div>
+
+  <!-- Metrics row -->
+  <div class="row g-3 mb-5">
+    <div class="col-6 col-md-3">
+      <div class="card-glass text-center">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--accent2)">{{ "%.4f"|format(metadata.metrics.r2) }}</div>
+        <div class="text-muted-c" style="font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;margin-top:.3rem">R² Score</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:.4rem">Variance Explained</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card-glass text-center">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--primary-light)">${{ "{:,.0f}".format(metadata.metrics.mae) }}</div>
+        <div class="text-muted-c" style="font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;margin-top:.3rem">MAE</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:.4rem">Mean Absolute Error</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card-glass text-center">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--secondary)">${{ "{:,.0f}".format(metadata.metrics.rmse) }}</div>
+        <div class="text-muted-c" style="font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;margin-top:.3rem">RMSE</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:.4rem">Root Mean Sq Error</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card-glass text-center">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--accent)">{{ metadata.best_model.split()[0] }}</div>
+        <div class="text-muted-c" style="font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;margin-top:.3rem">Best Model</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:.4rem">Auto-selected</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts row 1 -->
+  <div class="row g-4 mb-4">
+    {% if importance_chart %}
+    <div class="col-lg-6">
+      <div class="chart-wrapper">
+        <div class="chart-title">Feature Importance Ranking</div>
+        <div id="chart-importance" class="plotly-chart" style="height:400px"></div>
+      </div>
+    </div>
+    {% endif %}
+    <div class="col-lg-{% if importance_chart %}6{% else %}12{% endif %}">
+      <div class="chart-wrapper">
+        <div class="chart-title">All Models — Performance Comparison</div>
+        <div id="chart-model-compare" class="plotly-chart" style="height:400px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Residual chart -->
+  {% if residuals_chart %}
+  <div class="row g-4 mb-4">
+    <div class="col-12">
+      <div class="chart-wrapper">
+        <div class="chart-title">Residual Analysis (Test Set)</div>
+        <div id="chart-residuals" class="plotly-chart" style="height:380px"></div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Feature importance table + model table side by side -->
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="card-glass">
+        <h6 style="font-weight:700;margin-bottom:1rem">Top Feature Importances</h6>
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Feature</th>
+              <th>Score</th>
+              <th>Bar</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for feat in top_features %}
+            <tr>
+              <td class="text-muted-c">{{ loop.index }}</td>
+              <td style="font-weight:500">{{ feat.name }}</td>
+              <td>{{ feat.score }}</td>
+              <td style="width:80px">
+                <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden">
+                  <div style="height:100%;width:{{ (feat.score / top_features[0].score * 100)|int }}%;background:linear-gradient(90deg,#6C63FF,#38F9D7);border-radius:4px"></div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card-glass">
+        <h6 style="font-weight:700;margin-bottom:1rem">All Model Metrics</h6>
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>R²</th>
+              <th>MAE</th>
+              <th>RMSE</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for name, m in metadata.all_models.items() %}
+            <tr>
+              <td>
+                <span style="font-weight:600">{{ name }}</span>
+                {% if name == metadata.best_model %}
+                  <span class="badge-pill badge-success ms-1">Best</span>
+                {% endif %}
+              </td>
+              <td>{{ "%.3f"|format(m.r2) }}</td>
+              <td style="font-size:.82rem">${{ "{:,.0f}".format(m.mae) }}</td>
+              <td style="font-size:.82rem">${{ "{:,.0f}".format(m.rmse) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div class="mt-4 text-center">
+          <button onclick="retrain()" class="btn-outline-custom" id="retrain-btn">
+            ♻ Retrain Models
+          </button>
+          <p class="text-muted-c" style="font-size:.75rem;margin-top:.5rem">Rebuilds all models from scratch</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="container">
+    <p>PropSeeker &mdash; House Price Prediction &bull; Built with Flask, Scikit-learn & Plotly</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+  const charts = {
+    importance: {{ importance_chart | tojson if importance_chart else 'null' }},
+    model_compare: {{ model_chart | tojson }},
+    residuals: {{ residuals_chart | tojson if residuals_chart else 'null' }},
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (charts.importance) renderChart('chart-importance', charts.importance);
+    renderChart('chart-model-compare', charts.model_compare);
+    if (charts.residuals) renderChart('chart-residuals', charts.residuals);
+  });
+
+  async function retrain() {
+    const btn = document.getElementById('retrain-btn');
+    btn.textContent = '⟳ Retraining...';
+    btn.disabled = true;
+    try {
+      const resp = await fetch('/api/retrain', { method: 'POST' });
+      const data = await resp.json();
+      if (data.success) {
+        showToast(`Retrain complete! New R²: ${data.r2.toFixed(4)}`, 'success');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (e) {
+      showToast('Retrain failed: ' + e.message, 'error');
+      btn.textContent = '♻ Retrain Models';
+      btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>
