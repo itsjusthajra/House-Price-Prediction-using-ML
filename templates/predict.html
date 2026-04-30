@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Predict Price | PropSeeker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <span class="logo-icon">⬡</span> PropSeeker
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav ms-auto gap-1">
+        <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link active" href="/predict">Predict</a></li>
+        <li class="nav-item"><a class="nav-link" href="/insights">Model Insights</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container" style="padding: 2.5rem 0 5rem">
+  <div class="row g-4">
+
+    <!-- Form Column -->
+    <div class="col-lg-5">
+      <div class="section-header mb-4">
+        <h2>Property Details</h2>
+        <p>Fill in the house specifications to get an estimate</p>
+      </div>
+
+      <div class="card-glass">
+        <!-- Area slider -->
+        <div class="form-group mb-4">
+          <label>Total Area (sq ft)</label>
+          <div class="d-flex align-center gap-2 mb-2">
+            <span class="text-muted-c" style="font-size:.82rem">1,650</span>
+            <input type="range" id="area-range" min="1650" max="16200" step="50" value="5000"
+                   oninput="syncInput('area', this.value)">
+            <span class="text-muted-c" style="font-size:.82rem">16,200</span>
+          </div>
+          <input type="number" id="area" class="form-control-custom" value="5000" min="1650" max="16200"
+                 oninput="syncRange('area-range', this.value)">
+        </div>
+
+        <!-- Bedrooms -->
+        <div class="form-group mb-4">
+          <label>Bedrooms</label>
+          <div class="toggle-group" id="bedrooms-group">
+            {% for n in [1,2,3,4,5,6] %}
+            <button class="toggle-btn {% if n == 3 %}active{% endif %}"
+                    onclick="selectToggle('bedrooms-group', this, '{{ n }}')">{{ n }}</button>
+            {% endfor %}
+          </div>
+          <input type="hidden" id="bedrooms" value="3">
+        </div>
+
+        <!-- Bathrooms -->
+        <div class="form-group mb-4">
+          <label>Bathrooms</label>
+          <div class="toggle-group" id="bathrooms-group">
+            {% for n in [1,2,3,4] %}
+            <button class="toggle-btn {% if n == 2 %}active{% endif %}"
+                    onclick="selectToggle('bathrooms-group', this, '{{ n }}')">{{ n }}</button>
+            {% endfor %}
+          </div>
+          <input type="hidden" id="bathrooms" value="2">
+        </div>
+
+        <!-- Stories -->
+        <div class="form-group mb-4">
+          <label>Stories / Floors</label>
+          <div class="toggle-group" id="stories-group">
+            {% for n in [1,2,3,4] %}
+            <button class="toggle-btn {% if n == 2 %}active{% endif %}"
+                    onclick="selectToggle('stories-group', this, '{{ n }}')">{{ n }}</button>
+            {% endfor %}
+          </div>
+          <input type="hidden" id="stories" value="2">
+        </div>
+
+        <!-- Parking -->
+        <div class="form-group mb-4">
+          <label>Parking Spots</label>
+          <div class="toggle-group" id="parking-group">
+            {% for n in [0,1,2,3] %}
+            <button class="toggle-btn {% if n == 0 %}active{% endif %}"
+                    onclick="selectToggle('parking-group', this, '{{ n }}')">{{ n }}</button>
+            {% endfor %}
+          </div>
+          <input type="hidden" id="parking" value="0">
+        </div>
+
+        <!-- Furnishing -->
+        <div class="form-group mb-4">
+          <label>Furnishing Status</label>
+          <select id="furnishingstatus" class="form-control-custom">
+            {% for opt in furnishing_options %}
+            <option value="{{ opt }}">{{ opt|title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Boolean features -->
+        <div class="row g-3 mb-4">
+          <div class="col-6">
+            <div class="form-group">
+              <label>Main Road Access</label>
+              <div class="toggle-group" id="mainroad-group">
+                <button class="toggle-btn active" onclick="selectToggle('mainroad-group', this, 'yes')">Yes</button>
+                <button class="toggle-btn" onclick="selectToggle('mainroad-group', this, 'no')">No</button>
+              </div>
+              <input type="hidden" id="mainroad" value="yes">
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-group">
+              <label>Preferred Area</label>
+              <div class="toggle-group" id="prefarea-group">
+                <button class="toggle-btn" onclick="selectToggle('prefarea-group', this, 'yes')">Yes</button>
+                <button class="toggle-btn active" onclick="selectToggle('prefarea-group', this, 'no')">No</button>
+              </div>
+              <input type="hidden" id="prefarea" value="no">
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-group">
+              <label>Air Conditioning</label>
+              <div class="toggle-group" id="airconditioning-group">
+                <button class="toggle-btn" onclick="selectToggle('airconditioning-group', this, 'yes')">Yes</button>
+                <button class="toggle-btn active" onclick="selectToggle('airconditioning-group', this, 'no')">No</button>
+              </div>
+              <input type="hidden" id="airconditioning" value="no">
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-group">
+              <label>Guest Room</label>
+              <div class="toggle-group" id="guestroom-group">
+                <button class="toggle-btn" onclick="selectToggle('guestroom-group', this, 'yes')">Yes</button>
+                <button class="toggle-btn active" onclick="selectToggle('guestroom-group', this, 'no')">No</button>
+              </div>
+              <input type="hidden" id="guestroom" value="no">
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-group">
+              <label>Basement</label>
+              <div class="toggle-group" id="basement-group">
+                <button class="toggle-btn" onclick="selectToggle('basement-group', this, 'yes')">Yes</button>
+                <button class="toggle-btn active" onclick="selectToggle('basement-group', this, 'no')">No</button>
+              </div>
+              <input type="hidden" id="basement" value="no">
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-group">
+              <label>Hot Water Heating</label>
+              <div class="toggle-group" id="hotwaterheating-group">
+                <button class="toggle-btn" onclick="selectToggle('hotwaterheating-group', this, 'yes')">Yes</button>
+                <button class="toggle-btn active" onclick="selectToggle('hotwaterheating-group', this, 'no')">No</button>
+              </div>
+              <input type="hidden" id="hotwaterheating" value="no">
+            </div>
+          </div>
+        </div>
+
+        <button onclick="runPrediction()" class="btn-primary-custom w-100" style="justify-content:center;font-size:1rem">
+          <span id="predict-btn-text">⚡ Estimate Price</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Results Column -->
+    <div class="col-lg-7">
+      <!-- Idle state -->
+      <div id="idle-state" class="text-center" style="padding: 5rem 2rem">
+        <div style="font-size:4rem;margin-bottom:1rem">🏠</div>
+        <h4 style="font-weight:700;margin-bottom:.5rem">Configure Your Property</h4>
+        <p class="text-muted-c">Fill in the details on the left and click <strong>Estimate Price</strong></p>
+      </div>
+
+      <!-- Result state (hidden initially) -->
+      <div id="result-state" style="display:none">
+        <div class="prediction-card mb-4">
+          <p class="text-muted-c" style="font-size:.82rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">Estimated Market Price</p>
+          <div class="prediction-price" id="result-price">$0</div>
+          <p class="text-muted-c" style="font-size:.85rem;margin-top:.5rem" id="result-range"></p>
+
+          <div style="margin-top:1.5rem">
+            <div class="d-flex justify-between mb-1">
+              <span style="font-size:.8rem;color:var(--muted)">Model Confidence</span>
+              <span style="font-size:.8rem;font-weight:600" id="result-confidence">—</span>
+            </div>
+            <div class="confidence-bar">
+              <div class="confidence-fill" id="confidence-fill" style="width:0%"></div>
+            </div>
+          </div>
+
+          <div class="metric-row mt-3">
+            <div class="metric-box">
+              <div class="metric-val" id="res-r2">—</div>
+              <div class="metric-lbl">R² Score</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-val" id="res-model">—</div>
+              <div class="metric-lbl">Algorithm</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feature contribution chart -->
+        <div class="chart-wrapper">
+          <div class="chart-title">Feature Contribution to This Prediction</div>
+          <div id="chart-contribution" class="plotly-chart" style="height:380px"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>PropSeeker &mdash; House Price Prediction &bull; Built with Flask, Scikit-learn & Plotly</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+function syncInput(id, val) {
+  document.getElementById(id).value = val;
+}
+
+function syncRange(rangeId, val) {
+  document.getElementById(rangeId).value = val;
+}
+
+function selectToggle(groupId, btn, val) {
+  const group = document.getElementById(groupId);
+  group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // derive hidden input id from group id
+  const inputId = groupId.replace('-group', '');
+  const input = document.getElementById(inputId);
+  if (input) input.value = val;
+}
+
+async function runPrediction() {
+  const btn = document.getElementById('predict-btn-text');
+  btn.innerHTML = '<span class="spinner"></span> Estimating...';
+
+  const payload = {
+    area: parseFloat(document.getElementById('area').value),
+    bedrooms: parseInt(document.getElementById('bedrooms').value),
+    bathrooms: parseInt(document.getElementById('bathrooms').value),
+    stories: parseInt(document.getElementById('stories').value),
+    parking: parseInt(document.getElementById('parking').value),
+    furnishingstatus: document.getElementById('furnishingstatus').value,
+    mainroad: document.getElementById('mainroad').value,
+    guestroom: document.getElementById('guestroom').value,
+    basement: document.getElementById('basement').value,
+    hotwaterheating: document.getElementById('hotwaterheating').value,
+    airconditioning: document.getElementById('airconditioning').value,
+    prefarea: document.getElementById('prefarea').value,
+  };
+
+  try {
+    const resp = await fetch('/api/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await resp.json();
+
+    if (!data.success) throw new Error(data.error);
+
+    document.getElementById('idle-state').style.display = 'none';
+    document.getElementById('result-state').style.display = 'block';
+    document.getElementById('result-price').textContent = data.price_formatted;
+    document.getElementById('result-range').textContent = `Range: ${data.price_range}`;
+    document.getElementById('result-confidence').textContent = `${data.confidence}%`;
+    document.getElementById('confidence-fill').style.width = `${data.confidence}%`;
+    document.getElementById('res-r2').textContent = data.r2.toFixed(4);
+    document.getElementById('res-model').textContent = data.model_used.split(' ')[0];
+
+    if (data.contribution_chart) {
+      renderChart('chart-contribution', data.contribution_chart);
+    }
+
+    showToast('Price estimated successfully!', 'success');
+  } catch (err) {
+    showToast('Prediction failed: ' + err.message, 'error');
+    console.error(err);
+  } finally {
+    btn.innerHTML = '⚡ Estimate Price';
+  }
+}
+</script>
+</body>
+</html>
